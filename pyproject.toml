@@ -1,15 +1,16 @@
 [tool.poetry]
-name = "confort"
+name = "clearconf"
 version = "0.1.0"
 description = ""
 authors = ["andrearosasco <andrea.rosasco@iit.it>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-confort = "confort.cli.main:main"
+cconf = "clearconf.cli.main:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+typer = "^0"
 
 
 [build-system]
