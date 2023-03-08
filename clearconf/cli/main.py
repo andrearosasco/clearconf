@@ -17,22 +17,22 @@ stub_path = Path(os.path.abspath(clearconf.__file__)).parent / "stubs/config.py"
 def init():
     cfg_root = Path('configs')
     if cfg_root.exists():
-        raise FileExistsError(f'Directory {cfg_root.as_posix()} already exists.')
+        print(f'Directory {cfg_root.as_posix()} already exists.')
+    else:
+        cfg_root.mkdir()
+        (cfg_root / '__init__.py').touch()
+        shutil.copy(stub_path, cfg_root)
 
-    cfg_root.mkdir()
-    (cfg_root / '__init__.py').touch()
-    shutil.copy(stub_path, cfg_root)
+    cconf_config_file = Path('.clearconf')
+    if cconf_config_file.exists():
+        print(f'File {cconf_config_file.as_posix()} already exists.')
+    else:
+        cconf_config_file.touch()
 
-    cconf_configs = Path('.clearconf')
-    if cconf_configs.exists():
-        raise FileExistsError(f'File {cconf_configs.as_posix()} already exists.')
-
-    cconf_configs.touch()
-
-    content = {'cfg_root': cfg_root.as_posix()}
-    with cconf_configs.open('w+') as f:
-        json.dump(content, f, indent=4)
-        f.write('\n')
+        content = {'cfg_root': cfg_root.as_posix()}
+        with cconf_config_file.open('w+') as f:
+            json.dump(content, f, indent=4)
+            f.write('\n')
 
 @app.command()
 def list():
