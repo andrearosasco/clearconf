@@ -3,7 +3,7 @@
     new sections as you please."""
 
 # from pathlib import Path
-# from confort import BaseConfig
+# from clearconf import BaseConfig
 # from models import MLP
 # from datasets import ImageNet
 # from torch.optim import Adam
