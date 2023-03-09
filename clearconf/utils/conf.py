@@ -17,3 +17,11 @@ def get_configs(cconf_conf):
     return config_list
 
 
+def get_default(cconf_conf, script_name):
+    default_confs = cconf_conf['defaults']
+
+    for script in default_confs:
+        if script == script_name:
+            return default_confs[script]
+
+    return None
