@@ -4,13 +4,17 @@ import os
 
 import clearconf
 import typer
-import json
 
-from clearconf.cli.utils.file import find_config, load_config
+from clearconf.cli import defaults
+
+from clearconf.utils.file import find_cconf_config, load_cconf_config, save_cconf_config
+from clearconf.utils.stdout import print_list
+from clearconf.utils.conf import get_configs
 
 app = typer.Typer()
+app.add_typer(defaults.app, name="defaults")
 
-stub_path = Path(os.path.abspath(clearconf.__file__)).parent / "stubs/config.py"
+assets_path = Path(os.path.abspath(clearconf.__file__)).parent / "assets"
 
 
 @app.command()
@@ -20,40 +24,45 @@ def init():
         print(f'Directory {cfg_root.as_posix()} already exists.')
     else:
         cfg_root.mkdir()
-        (cfg_root / '__init__.py').touch()
-        shutil.copy(stub_path, cfg_root)
+        shutil.copy(assets_path / 'init.py', cfg_root / '__init__.py')
+        shutil.copy(assets_path / 'stub_conf.py', cfg_root)
 
-    cconf_config_file = Path('.clearconf')
-    if cconf_config_file.exists():
-        print(f'File {cconf_config_file.as_posix()} already exists.')
+    cconf_conf_path = Path('.clearconf')
+    if cconf_conf_path.exists():
+        print(f'File {cconf_conf_path.as_posix()} already exists.')
     else:
-        cconf_config_file.touch()
+        cconf_conf_path.touch()
 
-        content = {'cfg_root': cfg_root.as_posix()}
-        with cconf_config_file.open('w+') as f:
-            json.dump(content, f, indent=4)
-            f.write('\n')
+        cconf_conf = {
+            'project_root': os.getcwd(),
+            'conf_dir': cfg_root.as_posix(),
+            'defaults': {}
+        }
+
+        save_cconf_config(cconf_conf, cconf_conf_path)
 
 @app.command()
 def list():
-    cconf_conf_path = find_config()
-    cconf_conf = load_config(cconf_conf_path)
+    cconf_conf_path = find_cconf_config()
 
-    # List all files ending with _cfg in the cfg_root directory
-    for file in Path(cconf_conf['cfg_root']).glob('*'):
-        print(file)
+    if cconf_conf_path is None:
+        print("Couldn't find clearconf configuration file.\n"
+              "Run 'cconf init' in your project root directory.")
+        return
 
+    cconf_conf = load_cconf_config(cconf_conf_path)
+    config_list = get_configs(cconf_conf)
+
+    print_list(config_list)
 
 
 @app.callback()
 def doc():
     """
-    confort CLI can be used to initialized your
+    clearconf CLI can be used to initialized your
     project configurations.
     """
 
 
 def main():
     app()
-
-
