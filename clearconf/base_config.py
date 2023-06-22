@@ -31,7 +31,7 @@ class BaseConfig(metaclass=Watcher):
                 target_attr = target_attr - set(dir(target.__mro__[i]))
 
         for k in target_attr:
-            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict']:
+            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg']:
                 attr = getattr(target, k)
 
                 # If it's a module get inside
@@ -72,7 +72,7 @@ class BaseConfig(metaclass=Watcher):
 
         res = {}
         for k in dir(target):
-            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict']:
+            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg']:
                 attr = getattr(target, k)
                 # If it's a class inside config, get inside it,
                 # else just log module and name in the dict as a string
@@ -103,7 +103,7 @@ class BaseConfig(metaclass=Watcher):
 
         res = []
         for k in dir(target):
-            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict']:
+            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg']:
                 attr = getattr(target, k)
                 # If it's a class inside config, get inside it,
                 # else just log module and name in the dict as a string
