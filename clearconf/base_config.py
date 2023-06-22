@@ -5,11 +5,13 @@ import json
 from pathlib import Path
 
 
-class BaseConfig:
+class Watcher(type):
+    def __init__(cls, name, bases, clsdict):
+        if len(cls.mro()) > 2:
+            cls._subclass()
+        super(Watcher, cls).__init__(name, bases, clsdict)
 
-    @classmethod
-    def init(cls):
-        cls._subclass()
+class BaseConfig(metaclass=Watcher):
 
     @classmethod
     def to_json(cls):
@@ -46,6 +48,8 @@ class BaseConfig:
                         else:
                             res[k] = f'function : {attr.__name__}'
                     elif attr.__module__.split('.')[0] == '__main__' or 'config' in attr.__module__:
+                        if len(attr.mro()) >= 5: # when a config class is subclassed to use it directly
+                            k = attr.mro()[3].__name__ 
                         res[k] = attr.to_dict()
                     else:
                         # End up here if attr is not a class defined inside module.
@@ -113,6 +117,9 @@ class BaseConfig:
                 else:
                     res.append(attr)
         return res
+    
+    def get_cfg(self):
+        return self.__class__
 
     def __getattribute__(self, item):
         return object.__getattribute__(self, item)
