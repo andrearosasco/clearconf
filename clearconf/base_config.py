@@ -53,11 +53,12 @@ class BaseConfig(metaclass=Watcher):
                         res[k] = attr.to_dict()
                     else:
                         # End up here if attr is not a class defined inside module.
-                        # e.g. built-in types, functions, etc.
-                        if type(attr).__name__ == 'type':
+                        if type(attr).__name__ == 'type':  # it is a class
                             name = attr.__name__
-                        else:
+                        else: # it is an object
                             name = type(attr).__name__
+                            if attr.__str__ is not object.__str__:
+                                name = attr.__str__()   
                         res[k] = f'{attr.__module__}.{name}'
                 # If it's not a class save it. This is done for basic types.
                 # Could cause problems with complex objects
