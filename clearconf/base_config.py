@@ -18,10 +18,19 @@ class BaseConfig(metaclass=Watcher):
         return json.dumps(cls.to_dict())
 
     @classmethod
-    def to_dict(cls):
+    def to_dict(cls, add_parent=False):
         target = cls
 
-        res = {}
+        # This add target as the top key of the dictionary
+        #  if add_parent is True
+        res = output = {}
+        if add_parent:
+            key = target.__name__
+            if len(target.mro()) >= 4:
+                key =  target.mro()[2].__name__
+            if len(target.mro()) >= 5:
+                key = f'{key}({target.mro()[3].__name__})'
+            output = {key: res}
 
         target_attr = set(dir(target))
         # This removes variables from superclasses
@@ -64,7 +73,8 @@ class BaseConfig(metaclass=Watcher):
                 # Could cause problems with complex objects
                 else:
                     res[k] = attr
-        return res
+
+        return output
 
     @classmethod
     def _subclass(cls):
