@@ -7,6 +7,11 @@ from pathlib import Path
 
 class Watcher(type):
     def __init__(cls, name, bases, clsdict):
+        # This is first called for BaseConfig, then for Config
+        # After subclass is called, or the classes defined insided Config inherit
+        # from BaseConfig and this is called for those too.
+        
+        # This allows us to propagate BaseConfig deeper.
         if len(cls.mro()) > 2:
             cls._subclass()
         super(Watcher, cls).__init__(name, bases, clsdict)
@@ -35,7 +40,7 @@ class BaseConfig(metaclass=Watcher):
         target_attr = set(dir(target))
         # This removes variables from superclasses
         for i in range(3, len(target.__mro__) - 1):
-            # The if allows inheritance between configs but I guess there are better solutions
+            # The allows inheritance between configs but I guess there are better solutions
             if 'configs' not in target.__mro__[i].__module__:
                 target_attr = target_attr - set(dir(target.__mro__[i]))
 
@@ -97,7 +102,6 @@ class BaseConfig(metaclass=Watcher):
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
                         setattr(target, k, type(f'{k}_mod', (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
-                        getattr(target, k)._subclass()
         return res
 
     @classmethod
