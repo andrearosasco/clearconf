@@ -68,12 +68,13 @@ class BaseConfig(metaclass=Watcher):
                     else:
                         # End up here if attr is not a class defined inside module.
                         if type(attr).__name__ == 'type':  # it is a class
-                            name = attr.__name__
+                            name = f'{attr.__module__}.{attr.__name__}'
                         else: # it is an object
-                            name = type(attr).__name__
                             if attr.__str__ is not object.__str__:
-                                name = attr.__str__()   
-                        res[k] = f'{attr.__module__}.{name}'
+                                name = attr.__str__()  # sometimes repr() might be preferable
+                            else:
+                                name = f'{type(attr).__name__}.{attr.__name__}'
+                            res[k] = name
                 # If it's not a class save it. This is done for basic types.
                 # Could cause problems with complex objects
                 else:
@@ -109,7 +110,6 @@ class BaseConfig(metaclass=Watcher):
         import torch
         res = cls.to_dict()
         res = flatten(res)
-        # res = {k.split('.')[-1]: torch.tensor(v) if isinstance(v, list) else v for k, v in res.items()}
         return res
 
     @classmethod
@@ -133,9 +133,24 @@ class BaseConfig(metaclass=Watcher):
                     res.append(attr)
         return res
     
-    def get_cfg(self):
-        return self.__class__
-
+    def get_cfg(self, to_self=False):
+        if not to_self:
+            return self.__class__
+        
+        target = self.__class__
+        
+        target_attr = set(dir(target))
+        # This removes variables from superclasses
+        for i in range(3, len(target.__mro__) - 1):
+            # The allows inheritance between configs but I guess there are better solutions
+            if 'configs' not in target.__mro__[i].__module__:
+                target_attr = target_attr - set(dir(target.__mro__[i]))
+        
+        for k in target_attr:
+            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg']:
+                attr = getattr(target, k)
+                setattr(self, k, attr)
+    
     def __getattribute__(self, item):
         return object.__getattribute__(self, item)
 
