@@ -102,7 +102,8 @@ class BaseConfig(metaclass=Watcher):
                         # This way the module keeps its subclasses but it is also subclassed by
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
-                        setattr(target, k, type(f'{k}_mod', (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
+                        if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
+                            setattr(target, k, type(f'{k}_mod', (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
         return res
 
     @classmethod
