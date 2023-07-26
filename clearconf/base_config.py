@@ -39,10 +39,11 @@ class BaseConfig(metaclass=Watcher):
 
         target_attr = set(dir(target))
         # This removes variables from superclasses
-        for i in range(3, len(target.__mro__) - 1):
+        for attr in [a for a in target.mro() 
+                     if a.__name__ not in [target.__name__, f'{target.__name__}_mod', target.__name__[:-4], 'BaseConfig', 'Config', 'object']]:
             # The allows inheritance between configs but I guess there are better solutions
-            if 'configs' not in target.__mro__[i].__module__:
-                target_attr = target_attr - set(dir(target.__mro__[i]))
+            if 'configs' not in attr.__module__:
+                target_attr = target_attr - set(dir(attr))
 
         for k in target_attr:
             if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg']:
