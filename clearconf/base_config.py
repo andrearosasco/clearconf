@@ -62,9 +62,12 @@ class BaseConfig(metaclass=Watcher):
                         else:
                             res[k] = f'function : {attr.__name__}'
                     elif attr.__module__.split('.')[0] == '__main__' or 'config' in attr.__module__:
-                        if len(attr.mro()) >= 5: # when a config class is subclassed to use it directly
-                            subclass_name = [a for a in [a.__name__ for a in attr.mro()] if a not in [k, f'{k}_Mod', 'BaseConfig']][0]
-                            k = f'{k}({subclass_name})'
+                        subclass_names = [a for a in [a.__name__ for a in attr.mro()] 
+                                     if a not in [k, f'{k}_mod', 'BaseConfig', 'object']]
+                        
+                        if len(subclass_names) > 0: # when a config class is subclassed to use it directly
+                            k = f'{k}({subclass_names[0]})'
+
                         res[k] = attr.to_dict()
                     else:
                         # End up here if attr is not a class defined inside module.
