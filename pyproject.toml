@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clearconf"
-version = "0.3.7"
+version = "0.3.8"
 description = "ClearConf is a library created to support easy and manageble python configuration. It consists in a CLI tool to manage the configuration directory, and in a python class (BaseConfig) which adds additional functionalities to a configuration class."
 authors = ["Andrea Rosasco <andrearosasco.ar@gmail.com>"]
 homepage = "https://github.com/andrearosasco/clearconf"
