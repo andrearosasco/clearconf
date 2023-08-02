@@ -4,6 +4,25 @@ import inspect
 import json
 from pathlib import Path
 
+class _NestedClassGetter(object):
+    # https://stackoverflow.com/a/11493777
+    """
+    When called with the containing class as the first argument, 
+    and the name of the nested class as the second argument,
+    returns an instance of the nested class.
+    """
+    def __call__(self, containing_class, class_name):
+        nested_class = getattr(containing_class, class_name)
+
+        # make an instance of a simple object (this one will do), for which we can change the
+        # __class__ later on.
+        nested_instance = _NestedClassGetter()
+
+        # set the class of the instance, the __init__ will never be called on the class
+        # but the original state will be set later on by pickle.
+        nested_instance.__class__ = nested_class
+        return nested_instance
+
 
 class Watcher(type):
     def __init__(cls, name, bases, clsdict):
@@ -108,8 +127,15 @@ class BaseConfig(metaclass=Watcher):
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
                         if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
-                            setattr(target, k, type(f'{k}_mod', (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
+                            setattr(target, k, type(k, (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
                             setattr((getattr(target, k)), 'parent', target)
+                            
+                            def _pickle_reduce(self):
+                                # return a class which can return this class when called with the 
+                                # appropriate tuple of arguments
+                                state = self.__dict__.copy()
+                                return (_NestedClassGetter(), (target, self.__class__.__name__, ), state)
+                            setattr((getattr(target, k)), '__reduce__', _pickle_reduce)
         return res
 
     @classmethod
