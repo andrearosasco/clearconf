@@ -67,6 +67,9 @@ class BaseConfig(metaclass=Watcher):
         for k in target_attr:
             if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg', 'parent']:
                 attr = getattr(target, k)
+                
+                if type(attr).__name__ == 'property':
+                    attr = attr.fget
 
                 # If it's a module get inside
                 if hasattr(attr, '__module__'):
@@ -80,7 +83,7 @@ class BaseConfig(metaclass=Watcher):
                             funcString = str(inspect.getsourcelines(attr)[0])
                             res[k] = funcString.strip("['\\n']").split(" = ")[1]
                         else:
-                            res[k] = f'function : {attr.__name__}'
+                            res[k] = f'function: {attr.__name__}'
                     elif attr.__module__.split('.')[0] == '__main__' or 'config' in attr.__module__:
                         subclass_names = [a for a in [a.__name__ for a in attr.mro()] 
                                      if a not in [k, f'{k}_mod', 'BaseConfig', 'object']]
@@ -127,7 +130,7 @@ class BaseConfig(metaclass=Watcher):
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
                         if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
-                            if Generic in (base_classes := attr.mro()): base_classes.remove(Generic) # Necessary to work with torch.Datasets
+                            if Generic in (base_classes := attr.mro()): base_classes.remove(Generic)
                             setattr(target, k, type(k, (BaseConfig, ) + tuple(base_classes), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
                             setattr((getattr(target, k)), 'parent', target)
                             
@@ -141,7 +144,6 @@ class BaseConfig(metaclass=Watcher):
 
     @classmethod
     def to_flat_dict(cls) -> dict:
-        import torch
         res = cls.to_dict()
         res = flatten(res)
         return res
