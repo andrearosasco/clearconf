@@ -3,9 +3,9 @@ import collections
 import inspect
 import json
 from pathlib import Path
+from typing import Generic
 
 class _NestedClassGetter(object):
-    # https://stackoverflow.com/a/11493777
     """
     When called with the containing class as the first argument, 
     and the name of the nested class as the second argument,
@@ -127,7 +127,8 @@ class BaseConfig(metaclass=Watcher):
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
                         if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
-                            setattr(target, k, type(k, (BaseConfig, ) + tuple(attr.__mro__), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
+                            if Generic in (base_classes := attr.mro()): base_classes.remove(Generic) # Necessary to work with torch.Datasets
+                            setattr(target, k, type(k, (BaseConfig, ) + tuple(base_classes), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
                             setattr((getattr(target, k)), 'parent', target)
                             
                             def _pickle_reduce(self):
