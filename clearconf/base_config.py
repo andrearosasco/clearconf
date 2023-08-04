@@ -4,6 +4,7 @@ import inspect
 import json
 from pathlib import Path
 from typing import Generic
+import copy
 
 class _NestedClassGetter(object):
     """
@@ -34,6 +35,13 @@ class Watcher(type):
         if len(cls.mro()) > 2:
             cls._subclass()
         super(Watcher, cls).__init__(name, bases, clsdict)
+
+def find_root(target):
+    while True:
+        try:
+            target = target.parent
+        except AttributeError:
+            return target
 
 class BaseConfig(metaclass=Watcher):
 
@@ -118,6 +126,17 @@ class BaseConfig(metaclass=Watcher):
         for k in dir(target):
             if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg', 'parent']:
                 attr = getattr(target, k)
+                
+                if isinstance(attr, str) and attr.startswith('[eval]'):
+                    body = copy.deepcopy(attr[6:])
+                    @classmethod
+                    @property
+                    def resolve(cls):
+                        cfg = find_root(target)
+                        cls = target
+                        return eval(body)
+                    setattr(target, k, resolve)
+                
                 # If it's a class inside config, get inside it,
                 # else just log module and name in the dict as a string
                 if hasattr(attr, '__module__') and type(attr).__name__ != 'function':
@@ -132,7 +151,6 @@ class BaseConfig(metaclass=Watcher):
                         if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
                             if Generic in (base_classes := attr.mro()): base_classes.remove(Generic)
                             setattr(target, k, type(k, (BaseConfig, ) + tuple(base_classes), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
-                            setattr((getattr(target, k)), 'parent', target)
                             
                             def _pickle_reduce(self):
                                 # return a class which can return this class when called with the 
@@ -140,6 +158,7 @@ class BaseConfig(metaclass=Watcher):
                                 state = self.__dict__.copy()
                                 return (_NestedClassGetter(), (target, self.__class__.__name__, ), state)
                             setattr((getattr(target, k)), '__reduce__', _pickle_reduce)
+                        setattr((getattr(target, k)), 'parent', target)
         return res
 
     @classmethod
