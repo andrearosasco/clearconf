@@ -133,10 +133,16 @@ class BaseConfig(metaclass=Watcher):
     def _subclass(cls):
 
         target = cls
+        
+        #  Give a name to the class
+        subclass_names = [a for a in [a.__name__ for a in target.mro()] if a not in [target.__name__, 'BaseConfig', 'object']]
+        if len(subclass_names) > 0:
+            _name = f'{_name}:{subclass_names[0]}'
+        setattr(target, '_name', _name)
 
         res = {}
         for k in dir(target):
-            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg', 'parent']:
+            if not k.startswith('_') and k not in ['to_dict', 'to_json', 'to_list', 'init', 'to_flat_dict', 'get_cfg', 'parent', '_name']:
                 attr = getattr(target, k)
                 
                 if isinstance(attr, str) and attr.startswith('[eval]'):
@@ -147,14 +153,17 @@ class BaseConfig(metaclass=Watcher):
                 # else just log module and name in the dict as a string
                 if hasattr(attr, '__module__') and type(attr).__name__ != 'function':
                     
-
                     # if we are executing the config the module is __main__. If we are importing it is config
                     # Not ideal but config could be anywhere in the name
                     # Need to find a better way to do this
+                    
+                    # All of this could be probably brought out of the for loop as _subclass is called
+                    # for all the nested classes
                     if attr.__module__.split('.')[0] == '__main__' or 'config' in attr.__module__:
                         # This way the module keeps its subclasses but it is also subclassed by
                         # BaseConfig inheriting its method. A security check could be used to assure
                         # that the new methods are not overriding any old one.
+                        
                         if 'BaseConfig' not in [a.__name__ for a in attr.mro()]:
                             if Generic in (base_classes := attr.mro()): base_classes.remove(Generic)
                             setattr(target, k, type(k, (BaseConfig, ) + tuple(base_classes), dict(list(dict(vars(BaseConfig)).items()) + list(dict(vars(attr)).items()))))
