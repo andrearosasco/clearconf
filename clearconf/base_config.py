@@ -2,9 +2,18 @@ import __main__
 import collections
 import inspect
 import json
-from pathlib import Path
+from functools import partial
 from typing import Generic
 import copy
+
+import types
+def copy_func(f, name=None):
+    return types.FunctionType(f.func_code, f.func_globals, name or f.func_name,
+        f.func_defaults, f.func_closure)
+
+def resolve(cls, body):
+    cfg = find_root(cls)
+    return eval(body) 
 
 class _NestedClassGetter(object):
     """
@@ -93,8 +102,10 @@ class BaseConfig(metaclass=Watcher):
                         else:
                             res[k] = f'function: {attr.__name__}'
                     elif attr.__module__.split('.')[0] == '__main__' or 'config' in attr.__module__:
+                        if not inspect.isclass(attr): attr = type(attr)
+                        
                         subclass_names = [a for a in [a.__name__ for a in attr.mro()] 
-                                     if a not in [k, f'{k}_mod', 'BaseConfig', 'object']]
+                                     if a not in [k, 'BaseConfig', 'object']]
                         
                         if len(subclass_names) > 0: # when a config class is subclassed to use it directly
                             k = f'{k}({subclass_names[0]})'
@@ -117,6 +128,7 @@ class BaseConfig(metaclass=Watcher):
 
         return output
 
+
     @classmethod
     def _subclass(cls):
 
@@ -129,17 +141,12 @@ class BaseConfig(metaclass=Watcher):
                 
                 if isinstance(attr, str) and attr.startswith('[eval]'):
                     body = copy.deepcopy(attr[6:])
-                    @classmethod
-                    @property
-                    def resolve(cls):
-                        cfg = find_root(target)
-                        cls = target
-                        return eval(body)
-                    setattr(target, k, resolve)
+                    setattr(target, k, classmethod(property(partial(resolve, body=body))))
                 
                 # If it's a class inside config, get inside it,
                 # else just log module and name in the dict as a string
                 if hasattr(attr, '__module__') and type(attr).__name__ != 'function':
+                    
 
                     # if we are executing the config the module is __main__. If we are importing it is config
                     # Not ideal but config could be anywhere in the name
@@ -158,11 +165,13 @@ class BaseConfig(metaclass=Watcher):
                                 state = self.__dict__.copy()
                                 return (_NestedClassGetter(), (target, self.__class__.__name__, ), state)
                             setattr((getattr(target, k)), '__reduce__', _pickle_reduce)
+                        
                         setattr((getattr(target, k)), 'parent', target)
         return res
 
     @classmethod
     def to_flat_dict(cls) -> dict:
+        import torch
         res = cls.to_dict()
         res = flatten(res)
         return res
@@ -197,7 +206,7 @@ class BaseConfig(metaclass=Watcher):
         target_attr = set(dir(target))
         # This removes variables from superclasses
         for attr in [a for a in target.mro() 
-                     if a.__name__ not in [target.__name__, f'{target.__name__}_mod', target.__name__[:-4], 'BaseConfig', 'Config', 'object']]:
+                     if a.__name__ not in [target.__name__, target.__name__[:-4], 'BaseConfig', 'Config', 'object']]:
             # The allows inheritance between configs but I guess there are better solutions
             if 'configs' not in attr.__module__:
                 target_attr = target_attr - set(dir(attr))
