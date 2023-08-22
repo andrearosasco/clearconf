@@ -136,6 +136,7 @@ class BaseConfig(metaclass=Watcher):
         
         #  Give a name to the class
         subclass_names = [a for a in [a.__name__ for a in target.mro()] if a not in [target.__name__, 'BaseConfig', 'object']]
+        _name = target.__name__
         if len(subclass_names) > 0:
             _name = f'{_name}:{subclass_names[0]}'
         setattr(target, '_name', _name)
