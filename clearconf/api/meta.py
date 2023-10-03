@@ -20,6 +20,6 @@ class MetaBaseConfig(type):
 
         for node in nodes:
             subclass(node)
-            add_parent(node)
+            add_parent(node) # if you add the parent before subclass an infinite loop happens somehow
             resolve_eval(node)
             # add_pickle_reduce(node)

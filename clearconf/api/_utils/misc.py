@@ -36,6 +36,7 @@ def resolve(cls, body):
     try:
         return eval(body)
     except Exception as e:
+        # return 'Error in eval string evaluation'
         raise RuntimeError(f'The eval string {body} couldn\'t be resolved') from e
 
 def resolve_eval(node):
