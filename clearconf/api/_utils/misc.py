@@ -51,7 +51,7 @@ def resolve_eval(node):
         node.value = classmethod(property(partial(resolve, body=body)))
     
 def subclass(node):
-    if not node.is_config or node.is_visited or node.is_private or node.is_hidden:
+    if not node.is_config or node.is_visited or node.is_private or node.is_hidden or node.name == 'parent':
         return
     
     if Generic in (base_classes := node.value.mro()): base_classes.remove(Generic) # necessary to avoid errors with typing
@@ -62,7 +62,7 @@ def subclass(node):
     print()
     
 def add_parent(node):
-    if not node.is_config or node.is_hidden or node.is_private:
+    if not node.is_config or node.is_hidden or node.is_private or node.name == 'parent':
         return
     
     node.value.parent: Hidden = node.parent
