@@ -23,3 +23,13 @@ class MetaBaseConfig(type):
             add_parent(node) # if you add the parent before subclass an infinite loop happens somehow
             resolve_eval(node)
             # add_pickle_reduce(node)
+
+    def __setattr__(cls, key, value):
+        from clearconf.api._utils.misc import add_parent
+        super().__setattr__(key, value)
+        
+        # This will let you add a baseconfig as an attribute of another while maintaining the tree
+        if isinstance(value, MetaBaseConfig) and value._initialized and cls._initialized:
+            node = Node(key, parent=cls, value=value)
+            cls._nodes.append(node)
+            add_parent(node)
