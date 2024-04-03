@@ -7,14 +7,17 @@ To install ClearConf just run
 ```
 pip install clearconf
 ```
-## Usage
+## API
+
+## CLI
 The first step to use clearconf would be to use the CLI tool in the root of your project to initialize it:
 ```
 cconf init
 ```
 This will generate a `config` directory where you will store your configurations and a `.clearconf` file used by ClearConf to keep track of configurations.
 After this you can start populating your config directory. You can find examples of configuration files in the **Example** section.
-> ❗ClearConf recursively recognize as configuration all python files ending with `_conf`
+> [!IMPORTANT]
+> clearconf cli recursively recognize as configuration all python files ending with `_conf`
 
 Finally you can import a generic configuration in your script as 
 ```python
