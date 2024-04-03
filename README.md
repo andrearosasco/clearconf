@@ -1,6 +1,6 @@
 # clearconf
 ClearConf is a library created to support easy and manageble python configuration. 
-It consists in a python API (based on **BaseConfig**) which adds additional functionalities to
+It consists in a python API (based on the `BaseConfig` class) which adds additional functionalities to
 a configuration class, and in an optional **CLI tool** to simplify managing configurations.
 ## Installation
 To install ClearConf just run
