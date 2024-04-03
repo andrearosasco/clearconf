@@ -9,7 +9,7 @@ pip install clearconf
 ```
 ## API
 ### Example 1
-A configuration file for machine learning could be structure as follow.
+A configuration file for a machine learning project could be structure as follow.
 ```python
 from models import MLP
 from datasets import ImageNet
@@ -35,7 +35,7 @@ class Config(BaseConfig):
             subset = 'train'
 ```
 
-The training/test script could read the configuration as follows:
+The training/test script can access the configuration simply by importing it:
 ```python
 from configs import Config
 
@@ -54,19 +54,17 @@ class Config(BaseConfig):
     seed = 1234
 
     class Model(MLP):
-
-        class Params:
-            num_layers = 16
-            layers_dim = [96] * num_layers
+        num_layers = 16
+        layers_dim = [96] * num_layers
 ```
-The corresponding scirp is:
+The corresponding script is:
 ```python
 from configs import Config
 
-Model = Config.Model
-model = Model(**Model.Params.to_dict())
+model = Config.Model()
 ```
-
+> [!NOTE]
+> The MLP class will be able to access the attributes set in the configuration as plain object attributes (e.g. self.num_layer)
 
 ## CLI
 The first step to use clearconf would be to use the CLI tool in the root of your project to initialize it:
