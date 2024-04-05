@@ -39,8 +39,8 @@ class Node:
     @property
     def is_hidden(self):
         from clearconf.api.base_config import BaseConfig
-        return (self.name in dir(BaseConfig) or typing.get_type_hints(self.parent).get(self.name, None) == Hidden or 
-            Hidden in typing.get_args(typing.get_type_hints(self.parent).get(self.name, None)))
+        return (self.name in dir(BaseConfig) or 
+                self.parent.__dict__.get('__annotations__', {}).get(self.name, None) == Hidden)
     @property      
     def is_visited(self):
         from clearconf.api.base_config import BaseConfig
