@@ -1,0 +1,2 @@
+class EvalError(RuntimeError):
+    pass

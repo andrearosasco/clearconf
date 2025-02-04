@@ -1,3 +1,3 @@
 from .api.base_config import BaseConfig
-from .api.hidden import Hidden
+from .api.types import Hidden, Prompt
 from .api.root import Root
