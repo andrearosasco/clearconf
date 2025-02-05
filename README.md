@@ -1,6 +1,9 @@
 ClearConf is a Python configuration management library that provides a clean, hierarchical way to define and manage configurations through Python classes.
 
-Defining configurations in python makes accessing them simpler and more dynamic.
+Defining configurations in python makes them
+- **easy to access**: you can read configuration with a simple `import` statement
+- **flexible**: compositionality, inerhitance and other python features are integrated into clearconf
+- **customizable**: the framework allows to easily define new class-method and Types to add custom functionalities
 
 ## Core Concepts
 
@@ -13,6 +16,7 @@ from clearconf import BaseConfig
 class MyConfig(BaseConfig):
     pass
 ```
+When your root config subclass BaseConfig all nested classes will be automatically set to subclass BaseConfig. This will add to each of them a series of functionalities such as serialization functions and the ability to set values through the command line.
 
 ### Configuration Structure
 Configurations are defined using nested Python classes that inherit from 
@@ -34,18 +38,7 @@ class Config(BaseConfig):
 
 ## Features
 
-### 1. Configuration Types
-
-#### Static Values
-Simple configuration values can be defined as class attributes:
-
-```python
-class Config(BaseConfig):
-    batch_size = 32
-    learning_rate = 0.001
-```
-
-#### Dynamic Values
+### 1. Dynamic Values
 Values that need to be computed can use the `[eval]` prefix:
 
 ```python
@@ -54,8 +47,34 @@ class Config(BaseConfig):
     checkpoint_path = '[eval]f"checkpoints/{cfg.model_name}.pt"'
 ```
 
+Dynamic values are resolved at run time. This means that in the following case:
+```python
+class CommonConfig(BaseConfig):
+        
+    class Logging:
+        exp_dir:str = '[eval]f"{cfg.Method.name}_{cfg.Data.name}"'
+
+    class Method:
+        device:str = "cuda:0"
+
+
+class Config(CommonConfig):
+
+    class Method(CommonConfig.Method, MyMethod):
+        name = 'MethodA'
+        checkpoint = project_root / '../checkpoints/method.pt'
+
+class MyDataset(BaseConfig):
+    batch_size = 128
+    name = '[eval]f"DatasetA_{cls.batch_size}"'
+
+Config.Data = MyDataset
+Config.Logging.exp_dir
+```
+The attribute `Config.Logging.exp_dir` would be resolved to `'MethodA_DatasetA_128'`
+
 ### 2. Hidden Fields
-Fields that should not appear in serialized output can be marked with 
+Fields that should be ignored by clearconf functions (e.g. `to_dict`) can be marked as
 
 Hidden
 
@@ -95,6 +114,8 @@ class Config(BaseConfig):
 ```
 
 ### 5. Configuration Methods
+
+These methods, set as Hidden, are automatically added to all BaseConfig configurations.
 
 #### to_dict()
 Converts the configuration to a dictionary:
