@@ -1,5 +1,7 @@
 ClearConf is a Python configuration management library that provides a clean, hierarchical way to define and manage configurations through Python classes.
 
+Defining configurations in python makes accessing them simpler and more dynamic.
+
 ## Core Concepts
 
 ### BaseConfig Class
