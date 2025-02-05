@@ -16,12 +16,12 @@ from clearconf import BaseConfig
 class MyConfig(BaseConfig):
     pass
 ```
-When your root config subclass BaseConfig all nested classes will be automatically set to subclass BaseConfig. This will add to each of them a series of functionalities such as serialization functions and the ability to set values through the command line.
+When your root config subclass `BaseConfig` all nested classes will be automatically set to subclass `BaseConfig`. This will add to each of them a series of functionalities such as serialization functions and the ability to set values through the command line.
 
 ### Configuration Structure
 Configurations are defined using nested Python classes that inherit from 
 
-BaseConfig
+`BaseConfig`
 
 . Each class represents a configuration section.
 
@@ -76,7 +76,7 @@ The attribute `Config.Logging.exp_dir` would be resolved to `'MethodA_DatasetA_1
 ### 2. Hidden Fields
 Fields that should be ignored by clearconf functions (e.g. `to_dict`) can be marked as
 
-Hidden
+`Hidden`
 
 :
 
