@@ -1,99 +1,352 @@
-# clearconf
-ClearConf is a library created to support easy and manageble python configuration. 
-It consists in a python API (based on the `BaseConfig` class) which adds additional functionalities to
-a configuration class, and in an optional **CLI tool** to simplify managing configurations.
-## Installation
-To install ClearConf just run
-```
-pip install clearconf
-```
-## API
-### Example 1
-A configuration file for a machine learning project could be structure as follow.
+ClearConf is a Python configuration management library that provides a clean, hierarchical way to define and manage configurations through Python classes.
+
+## Core Concepts
+
+### BaseConfig Class
+The base class that all configurations must inherit from. It provides the foundation for hierarchical configuration management.
+
 ```python
-from models import MLP
-from datasets import ImageNet
+from clearconf import BaseConfig
 
+class MyConfig(BaseConfig):
+    pass
+```
 
+### Configuration Structure
+Configurations are defined using nested Python classes that inherit from 
+
+BaseConfig
+
+. Each class represents a configuration section.
+
+```python
 class Config(BaseConfig):
     seed = 1234
-
+    
     class Model:
-        architecture = MLP
-
+        num_layers = 16
+        
         class Params:
-            num_layers = 16
-            layers_dim = [96] * num_layers
+            learning_rate = 0.001
+```
 
+## Features
 
+### 1. Configuration Types
+
+#### Static Values
+Simple configuration values can be defined as class attributes:
+
+```python
+class Config(BaseConfig):
+    batch_size = 32
+    learning_rate = 0.001
+```
+
+#### Dynamic Values
+Values that need to be computed can use the `[eval]` prefix:
+
+```python
+class Config(BaseConfig):
+    model_name = "resnet"
+    checkpoint_path = '[eval]f"checkpoints/{cfg.model_name}.pt"'
+```
+
+### 2. Hidden Fields
+Fields that should not appear in serialized output can be marked with 
+
+Hidden
+
+:
+
+```python
+from clearconf import BaseConfig, Hidden
+
+class Config(BaseConfig):
+    api_key: Hidden = "secret123"
+```
+
+### 3. Interactive Configuration 
+Fields that require user input can be marked with 
+
+Prompt
+
+:
+
+```python
+from clearconf import BaseConfig, Prompt
+
+class Config(BaseConfig):
+    dataset_path: Prompt = "path/to/default"
+```
+
+### 4. Class Inheritance
+Configurations can inherit from implementation classes to provide direct access to configuration values:
+
+```python
+from models import MyModel
+
+class Config(BaseConfig):
+    class Model(MyModel):
+        num_layers = 16
+        hidden_size = 256
+```
+
+### 5. Configuration Methods
+
+#### to_dict()
+Converts the configuration to a dictionary:
+
+```python
+config_dict = Config.to_dict()
+```
+
+#### to_flat_dict()
+Converts the configuration to a flattened dictionary with dot notation:
+
+```python
+flat_dict = Config.to_flat_dict()
+# {'Model.num_layers': 16, 'Model.hidden_size': 256}
+```
+
+#### to_json()
+Serializes the configuration to JSON:
+
+```python
+json_str = Config.to_json()
+```
+
+### 6. Configuration Access
+
+Configurations can be accessed using dot notation:
+
+```python
+# Access nested values
+learning_rate = Config.Model.Params.learning_rate
+
+# Access parent configuration
+model = Config.Model()  # Creates model instance with config values
+```
+
+### 7. Command Line Integration
+
+The library supports automatic command-line argument parsing to override configuration values:
+
+```bash
+python train.py --Model.num_layers 32 --learning_rate 0.0005
+```
+
+## Best Practices
+
+1. Use nested classes to organize related configuration parameters
+2. Use type hints for better documentation
+3. Use 
+
+Hidden
+
+ for sensitive information
+4. Use `[eval]` for dynamic configuration values
+5. Inherit from implementation classes when configuration values are tightly coupled
+6. Place reusable configuration in base classes
+
+## Example Configuration
+
+```python
+from clearconf import BaseConfig, Hidden, Prompt
+from models import ResNet
+from datasets import ImageDataset
+
+class TrainingConfig(BaseConfig):
+    seed = 1234
+    device = "cuda"
+    
+    class Model(ResNet):
+        name = "resnet50"
+        num_classes = 10
+        pretrained = True
+        checkpoint: Hidden = "checkpoints/latest.pt"
+        
     class Data:
-        dataset = ImageNet
-
+        dataset = ImageDataset
+        root_dir: Prompt = "./data"
+        
         class Params:
-            root = './data/PCN'
-            split = 'PCN.json'
-            subset = 'train'
+            batch_size = 32
+            num_workers = 4
+            
+    class Optimizer:
+        name = "adam"
+        learning_rate = 0.001
 ```
 
-The training/test script can access the configuration simply by importing it:
-```python
-from configs import Config
+andrearosasco: rewrite it using github markdown (this means you can use stuff like > [!NOTE] or > [!IMPORTANT]) also talk about compositionality of configs at runtime (e.g. the fact that you can do cfg.data = Data) and that cfg in Data eval string will evaluate with respect to the new root config. And also about the fact that you can do stuff like this python config.py --Method config.MyMethod. Also discuss both about Prompt and Hidden but they should be grouped under the same group of features. you can find a name that you want for it 
 
-Model = Config.Model
-Data = Config.Data
+GitHub Copilot: # ClearConf Documentation
 
-model = Model.architecture(**Model.Params.to_dict())
-dataset = Data.dataset(**Data.Params.to_dict())
-```
-### Example 2
-It is also possible to simplify the configuration further using inheritance. For example the Model configuration seen before would look like this:
+ClearConf is a Python configuration management library that provides a clean, hierarchical way to define and manage configurations through Python classes.
+
+## Core Features
+
+### Configuration Inheritance
+Configurations are defined using nested Python classes that inherit from 
+
+BaseConfig
+
+:
+
 ```python
-from models import MLP
+from clearconf import BaseConfig
 
 class Config(BaseConfig):
     seed = 1234
-
-    class Model(MLP):
+    
+    class Model:
         num_layers = 16
-        layers_dim = [96] * num_layers
+        hidden_size = 256
 ```
-The corresponding script is:
-```python
-from configs import Config
 
-model = Config.Model()
-```
 > [!NOTE]
-> The MLP class will be able to access the attributes set in the configuration as plain object attributes (e.g. self.num_layer)
+> Classes nested inside a BaseConfig automatically inherit from it
 
-## CLI
-The first step to use clearconf would be to use the CLI tool in the root of your project to initialize it:
-```
-cconf init
-```
-This will generate a `config` directory where you will store your configurations and a `.clearconf` file used by ClearConf to keep track of configurations.
-After this you can start populating your config directory. You can find examples of configuration files in the **Example** section.
-> [!IMPORTANT]
-> clearconf cli recursively recognize as configuration all python files ending with `_conf`
+### Dynamic Values & Runtime Composition
 
-Finally you can import a generic configuration in your script as 
+#### Dynamic Values
+Values that need to be computed can use the `[eval]` prefix:
+
 ```python
-from configs import Config
+class Config(BaseConfig):
+    model_name = "resnet"
+    save_path = '[eval]f"checkpoints/{cfg.model_name}.pt"'
 ```
-and use it as you please.
 
-When the script is run, if a default configuration has been set via the CLI
-```
-cconf defaults add main.py test_conf.py
-```
-such configuration will be dynamically imported. 
+#### Runtime Configuration Composition
+Configurations can be composed at runtime:
 
-Otherwise, clearconf will list all the available configuration and ask you to pick one.
-```
-0: example3_conf
-1: example1_conf
-2: example2_conf
-3: example4_conf
-Choose a configuration file:
+```python
+from data_config import DataConfig
 
+class Config(BaseConfig):
+    seed = 1234
+    # Data config can be assigned later
+    
+# Runtime composition
+Config.data = DataConfig
 ```
+
+> [!IMPORTANT]  
+> When using `[eval]` strings, 
+
+cfg
+
+ will evaluate relative to the root configuration, even in imported sub-configurations
+
+### Special Field Types
+
+Both 
+
+Hidden
+
+ and 
+
+Prompt
+
+ provide ways to handle special configuration values:
+
+```python
+from clearconf import BaseConfig, Hidden, Prompt
+
+class Config(BaseConfig):
+    api_key: Hidden = "secret123"  # Hidden from serialization
+    dataset_path: Prompt = "default/path"  # Prompts for user input
+```
+
+### Implementation Inheritance 
+Configurations can inherit from implementation classes:
+
+```python
+from models import ResNet
+
+class Config(BaseConfig):
+    class Model(ResNet):  # Direct inheritance from implementation
+        num_layers = 16
+        hidden_size = 256
+```
+
+This allows the object to directly access its arguments as follow:
+
+```python
+class ResNet:
+    def __init__(self):
+        # Access config values through self
+        self.layers = [nn.Linear(self.hidden_size, self.hidden_size) 
+                      for _ in range(self.num_layers)]
+```
+
+And allows the application code to instantiate the object as :
+
+```python
+# training.py
+def train():
+    ...
+    # Creates ResNet instance with config values
+    model = Config.Model()
+    y = model(x)
+```
+
+### Command Line Integration
+
+Configurations can be modified via command line arguments:
+
+```bash
+# Override configuration values
+python train.py --Model.num_layers 32
+
+# Load implementation class
+python train.py --Method methods.MyMethod
+```
+
+## Configuration Methods
+
+### to_dict()
+Converts configuration to a dictionary:
+
+```python
+config_dict = Config.to_dict()
+```
+
+### to_flat_dict() 
+Flattens configuration with dot notation:
+
+```python
+flat_dict = Config.to_flat_dict()
+# {'Model.num_layers': 16, 'Model.hidden_size': 256}
+```
+
+### to_json()
+Serializes to JSON:
+
+```python
+json_str = Config.to_json()
+```
+
+## Example Configuration
+
+```python
+from clearconf import BaseConfig, Hidden, Prompt
+from models import ResNet
+
+class TrainingConfig(BaseConfig):
+    seed = 1234
+    device = "cuda"
+    
+    class Model(ResNet):
+        num_layers = 16
+        checkpoint: Hidden = "checkpoints/latest.pt"
+        data_path: Prompt = "./data"  # Will prompt user
+        
+        # Dynamic path based on configuration
+        save_path = '[eval]f"outputs/{cfg.Model.num_layers}_layers/"'
+```
+
+> [!NOTE]
+> The configuration system is designed to be both flexible at runtime and type-safe during development

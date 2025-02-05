@@ -4,6 +4,7 @@ import copy
 from itertools import accumulate
 import json
 from typing import Generic
+from clearconf.api.node import is_config, is_hidden, is_private, is_type
 from clearconf.api.types import Prompt
 import tempfile
 import os
@@ -14,7 +15,6 @@ import inspect
 
 def arg_parse(config):
     from clearconf.api._utils.misc import subclass
-    from clearconf.api.node import Node
 
     parser = argparse.ArgumentParser()
     
@@ -45,32 +45,33 @@ def arg_parse(config):
         for part in parts[:-1]:
             nested_cfg = getattr(config, part)
         
+        n_value = getattr(nested_cfg, parts[-1])
+        n_name = parts[-1]
         # Node API should be removed and helper methods placed inside ._cc attribute
-        node = Node(parts[-1], value=getattr(nested_cfg, parts[-1]))
-        if node.is_config:
+        if is_config(n_value, n_name, nested_cfg):
             # import class and make it superclass
             idx = -value[::-1].find('.')
             config_superclass = getattr(importlib.import_module(value[:idx-1]), value[idx:])
-            # When we do this the meta constructo gets called again
+            # When we do this the meta constructor gets called again
             # Is it an issue in practice? Maybe it is even a good thing?
-            if Generic in (base_classes := node.value.mro()): base_classes.remove(Generic)
-            superclassed_config = type(parts[-1], tuple(base_classes[:-1]) + (config_superclass,) ,
-                 dict(list(dict(vars(config_superclass)).items()) + list(dict(vars(getattr(nested_cfg, parts[-1]))).items())))
+            if Generic in (base_classes := n_value.mro()): base_classes.remove(Generic)
+            superclassed_config = type(n_name, tuple(base_classes[:-1]) + (config_superclass,) ,
+                 dict(list(dict(vars(config_superclass)).items()) + list(dict(vars(getattr(nested_cfg, n_name))).items())))
     
             # node.value._name = f'{node.value._name}:{config_superclass.__name__}'
-            setattr(nested_cfg, parts[-1], superclassed_config)
+            setattr(nested_cfg, n_name, superclassed_config)
 
         else:
-            setattr(nested_cfg, parts[-1], value)
+            setattr(nested_cfg, n_name, value)
 
 
 def user_input(config):
 
     class any_prompt:
         """Find all Prompts type in the tree"""
-        def compute(node):
-            if node.is_type(Prompt):
-                return [node]
+        def compute(value, name, parent):
+            if is_type(value, name, parent, Prompt):
+                return [(value, name, parent)]
             else:
                 return []
 
@@ -85,7 +86,7 @@ def user_input(config):
     user_input = {}
     content = ''
     for field in prompt_field:
-        content += f'user_input["{field.name}"] = {repr(field.value)}\n'
+        content += f'user_input["{field[1]}"] = {repr(field[0])}\n'
 
     # Create a temporary file with a .py extension and write the content of the source file to it
     with tempfile.NamedTemporaryFile(delete=False, suffix='.py', mode='w') as tmp_file:
@@ -104,7 +105,7 @@ def user_input(config):
     exec(user_values)
 
     for field in prompt_field:
-        field.value = user_input[field.name]
+        field[0] = user_input[field[1]]
 
 
 @classmethod
@@ -179,7 +180,7 @@ def to_dict(cls, add_parent=False):
 
 @classmethod
 def to_flat_dict(cls) -> dict:
-    res = cls.to_dict()
+    res = cls.to_dict2()
     res = flatten(res)
     return res
 
@@ -214,14 +215,14 @@ def to_json(cls):
 def to_dict2(cls):
     res = {}
     
-    for node in cls._nodes:
+    for name in dir(cls):
+        value = getattr(cls, name)
         
-        if not node.is_private and not node.is_hidden:
-            if node.is_config:
-
-                res[node.value._name] = node.value.to_dict2()   
+        if not is_private(value, name, cls) and not is_hidden(value, name, cls):
+            if is_config(value, name, cls):
+                res[value._cc.name] = value.to_dict2()   
             else:
-                res[node.name] = str(node.value)
+                res[name] = str(value)  # doing this automatically resolve eval strings
     return res
         
 

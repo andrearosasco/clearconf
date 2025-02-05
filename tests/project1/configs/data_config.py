@@ -1,11 +1,12 @@
 from clearconf import BaseConfig
 from dataset import MyDataset
 from clearconf import Hidden
+from typing import Union
 
 class MyDataset(BaseConfig):
     dataset_root = 'data/datasets/MyDataset'
     batch_size = 128
-    num_worker: Hidden = 8
+    num_worker: Union[Hidden, int] = 8
     
     class Train(MyDataset):
         split = 'train'

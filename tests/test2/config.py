@@ -1,9 +1,4 @@
 from clearconf import BaseConfig, Hidden, Prompt
-
-class MyMethod:
-    def __init__(self) -> None:
-        print(self.checkpoint)
-        print(self.device)
     
 
 class cfg(BaseConfig):

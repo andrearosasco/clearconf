@@ -8,7 +8,7 @@ class CommonConfig(BaseConfig):
         
     class Logging:
         log_dir:Path = project_root / 'logs'
-        exp_dir:str = f'[eval]f"{{cfg.Method._name.split(\':\')[1]}}_{{cfg.Data.name}}"'
+        exp_dir:str = f'[eval]f"{{cfg.Method._cc.name.split(\':\')[1]}}_{{cfg.Data.name}}"'
 
         save_images:bool = False
 
