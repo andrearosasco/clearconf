@@ -16,4 +16,3 @@ class MyDataset(BaseConfig):
     name = '[eval]f"{cls.mro()[0].__name__}_{cls.batch_size}"'
     
 Data = MyDataset
-

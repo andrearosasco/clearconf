@@ -28,6 +28,6 @@ def is_config(value, name, parent):
     from clearconf.api._utils.misc import find_root
     # Attr is a class who has either been defined in the same module we are considering or is a
     # subclass of BaseConfig
-    return (inspect.isclass(value) and 
-        (value.__module__ == parent.__module__ or issubclass(value, BaseConfig)) and name != 'parent')
+    # (value.__module__ == parent.__module__ or issubclass(value, BaseConfig)) and
+    return (inspect.isclass(value) and name != 'parent')
     

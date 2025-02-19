@@ -109,7 +109,7 @@ def user_input(config):
 
 
 @classmethod
-def to_dict(cls, add_parent=False):
+def to_dict2(cls, add_parent=False):
     target = cls
 
     # This add target as the top key of the dictionary
@@ -212,7 +212,7 @@ def to_json(cls):
     return json.dumps(cls.to_dict())
 
 @classmethod
-def to_dict2(cls):
+def to_dict(cls):
     res = {}
     
     for name in dir(cls):
@@ -220,7 +220,7 @@ def to_dict2(cls):
         
         if not is_private(value, name, cls) and not is_hidden(value, name, cls):
             if is_config(value, name, cls):
-                res[value._cc.name] = value.to_dict2()   
+                res[value._cc.name] = value.to_dict()   
             else:
                 res[name] = str(value)  # doing this automatically resolve eval strings
     return res

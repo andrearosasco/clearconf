@@ -74,6 +74,10 @@ def subclass(value, name, parent, superclass=BaseConfig):
 
     if Generic in (base_classes := value.mro()): base_classes.remove(Generic) # necessary to avoid errors with typing
     # this create a new class equals to attr but which subclass BaseConfig
+    for c in parent.mro():
+        # this is to correctly handle compositions through subclasses
+        if hasattr(c, name) and superclass in getattr(c, name).mro():
+            superclass = getattr(c, name)
     value = type(name,
                     tuple(base_classes[:-1]) + (superclass,) ,
                     dict(list(dict(vars(superclass)).items()) + list(dict(vars(value)).items()))
