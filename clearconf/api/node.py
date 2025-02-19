@@ -29,5 +29,5 @@ def is_config(value, name, parent):
     # Attr is a class who has either been defined in the same module we are considering or is a
     # subclass of BaseConfig
     # (value.__module__ == parent.__module__ or issubclass(value, BaseConfig)) and
-    return (inspect.isclass(value) and name != 'parent')
+    return (inspect.isclass(value) and name != '_cc')
     
